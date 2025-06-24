@@ -19,4 +19,8 @@ object ARNative {
     external fun onRotateCube(degrees : Float)
     external fun onScaleCube(scale : Float)
     external fun onTranslateCube(x : Float, y : Float, z : Float)
+
+    external fun nativeConvertToGLB(inputPath : String, outputPath : String) : Boolean
+    external fun setModelPath(modelPath : String)
+
 }

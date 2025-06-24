@@ -19,14 +19,19 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
+
 #define LOG_TAG "ARCore Manager"
 #define LOG_TID(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "[TID:%ld] " __VA_ARGS__, syscall(SYS_gettid))
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 #include "model.h"
+#include <glb_renderer.h>
 
 class ARCoreManager {
 public:
+    AAssetManager* asset_manager = nullptr;
+
     bool Initialize(void* env, jobject context, AAssetManager* mgr);
     void Resume();
     void Pause();
@@ -41,11 +46,16 @@ public:
     static void TransformPoint(const float model_matrix[16], const float local_point[3], float world_point[3]);
     void LoadTextureFromFile(const char* path, GLuint& textureID);
     std::string LoadShaderFromAsset(const char* shaderPath);
+    bool ConvertToGLB(const char* inputAssetPath, const char* outputFilePath);
+    void SetModelPath(const std::string& path);
 
 private:
 
-    /* For OBJ Model */
+    /* Model object */
     Model obj_model;
+    std::string model_path_;
+
+    GLBModel glb_model;
 
     float test_x_s = 0.0f;
     float test_y_s = 0.0f;
@@ -57,12 +67,11 @@ private:
 
     ArSession* ar_session = nullptr;
     ArFrame* ar_frame = nullptr;
-    AAssetManager* asset_manager = nullptr;
 
     int32_t screen_width = 0;
     int32_t screen_height = 0;
 
-    GLfloat scaling_factor = 0.125f;
+    GLfloat scaling_factor = 0.05;
 
     GLuint plane_shader_program;
     GLuint camera_shader_program;

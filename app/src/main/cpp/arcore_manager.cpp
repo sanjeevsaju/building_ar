@@ -1,5 +1,10 @@
-#include "arcore_manager.h"
+#include <arcore_manager.h>
 #include <thread>
+
+#define LOG_TAG "ARCore Managerl"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 #define GL_CHECK(x) \
     x; \
@@ -139,44 +144,80 @@ void ARCoreManager::OnSurfaceCreated() {
     glShaderSource(modelVertexShader, 1, &modelVertexShaderSource, nullptr);
     glCompileShader(modelVertexShader);
 
+    /* Checking for error */
+    GLint status = 0;
+    glGetShaderiv(modelVertexShader, GL_COMPILE_STATUS, &status);
+    if(status == GL_FALSE) {
+        GLint logLen = 0;;
+        glGetShaderiv(modelVertexShader, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen);
+        glGetShaderInfoLog(modelVertexShader, logLen, nullptr, log.data());
+        LOGI("SANJU : Failed to compile modelvertexshader : %s", log.data());
+    }
+
     GLuint modelFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(modelFragmentShader, 1, &modelFragmentShaderSource, nullptr);
     glCompileShader(modelFragmentShader);
+
+    /* Checking for error */
+    glGetShaderiv(modelFragmentShader, GL_COMPILE_STATUS, &status);
+    if(status == GL_FALSE) {
+        GLint logLen = 0;
+        glGetShaderiv(modelFragmentShader, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen);
+        glGetShaderInfoLog(modelFragmentShader, logLen, nullptr, log.data());
+        LOGI("SANJU : Failed to compile modelfragmentshader : %s", log.data());
+    }
 
     model_shader_program = glCreateProgram();
     glAttachShader(model_shader_program, modelVertexShader);
     glAttachShader(model_shader_program, modelFragmentShader);
     glLinkProgram(model_shader_program);
 
+    /* Checking for error */
+    glGetProgramiv(model_shader_program, GL_LINK_STATUS, &status);
+    if(status == GL_FALSE) {
+        GLint logLen = 0;;
+        glGetProgramiv(model_shader_program, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen);
+        glGetProgramInfoLog(model_shader_program, logLen, nullptr, log.data());
+        LOGI("SANJU : Failed to link model_shader_program : %s", log.data());
+    }
+
+
     LOG_TID("SANJU : Thread of OnSurfaceCreated");
 
     /* Let the model loads and does the opengl config concurrently using thread as it wont affect the camera texture rendering and plane rendering */
-    std::thread t1([&](){
-        LOG_TID("SANJU : Thread in OnSurfaceCreated");
-        /* Now reading the model data and setting model vao */
-        if(!obj_model.LoadWithAssimp(asset_manager, "objBuilding.obj")) {
-            LOGE("NAT_ERROR : Model loading failed : %s", obj_model.GetLastError().c_str());
-            return;
-        }
-
-        if(!obj_model.SetShaderProgram(model_shader_program)) {
-            LOGE("NAT_ERROR : Shader loading failed : %s", obj_model.GetLastError().c_str());
-            return;
-        }
-    });
-
-    t1.detach();
+//    std::thread t1([&](){
+//        LOG_TID("SANJU : Thread in OnSurfaceCreated");
+//        /* Now reading the model data and setting model vao */
+//        if(!obj_model.LoadWithAssimp(asset_manager, "objBuilding.obj")) {
+//            LOGE("NAT_ERROR : Model loading failed : %s", obj_model.GetLastError().c_str());
+//            return;
+//        }
+//
+//        if(!obj_model.SetShaderProgram(model_shader_program)) {
+//            LOGE("NAT_ERROR : Shader loading failed : %s", obj_model.GetLastError().c_str());
+//            return;
+//        }
+//    });
+//
+//    t1.detach();
 
     /* Now reading the model data and setting the model vao */
-//    if(!obj_model.LoadWithAssimp(asset_manager, "objBuilding.obj")) {
+//    if(!obj_model.LoadFromFile(asset_manager, model_path_)) {
 //        LOGE("NAT_ERROR : Model loading failed : %s", obj_model.GetLastError().c_str());
 //        return;
 //    }
+//
 //    if(!obj_model.SetShaderProgram(model_shader_program)) {
 //        LOGE("NAT_ERROR : Shader loading failed : %s", obj_model.GetLastError().c_str());
 //        return;
 //    }
 
+    glb_model.setProgram(model_shader_program);
+    glb_model.load(asset_manager, "models/building.glb");
+//    glb_model.load(asset_manager, model_path_);
     /****************** Model Config Ends *****************/
 
     glGenBuffers(1, &plane_vbo);
@@ -295,10 +336,10 @@ void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
         glm::mat4 model_pose_matrix = hit_pose_matrix;
         glm::mat4 model_scale = glm::scale(glm::mat4(1.0f), glm::vec3(scaling_factor));
         glm::mat4 model_rotation = glm::rotate(glm::mat4(1.0f), cube_rotation_angle, cube_rotation_axis);
+        glm::mat4 model_flip_axis = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::mat4 model_translation = glm::translate(glm::mat4(1.0f), cube_translation_vector);
         glm::mat4 model_mvp = proj * view * model_translation * model_pose_matrix * model_rotation * model_scale;
 
-        obj_model.Render(model_mvp);
+        glb_model.draw(glm::value_ptr(model_mvp));
     }
-
 }

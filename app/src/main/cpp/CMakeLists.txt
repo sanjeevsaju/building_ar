@@ -26,7 +26,7 @@ project("buildingar")
 # used in the AndroidManifest.xml file.
 add_library(${CMAKE_PROJECT_NAME} SHARED
         # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native_renderer.cpp arcore_manager.cpp utility.cpp stb_image.cpp model.cpp)
+        native_renderer.cpp arcore_manager.cpp utility.cpp stb_image.cpp glb_renderer.cpp model.cpp)
 
 # --------------------- Added Starts ---------------------------- #
 

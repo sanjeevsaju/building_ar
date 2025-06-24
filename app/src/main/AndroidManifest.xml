@@ -26,9 +26,26 @@
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="true">
+
+            <!--For glb and gltf files-->
+            <intent-filter android:autoVerify="true">
+                <!-- 1. Handle generic file taps -->
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- 2. For glTF/glb MIME types -->
+                <data android:scheme="file" android:mimeType="model/gltf-binary" />
+                <data android:scheme="content" android:mimeType="model/gltf-binary" />
+
+                <!-- 3. For explicit .glb files -->
+                <data android:scheme="file" android:pathPattern=".*\\.glb" />
+                <data android:scheme="content" android:pathPattern=".*\\.glb" />
+            </intent-filter>
+
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

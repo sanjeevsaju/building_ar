@@ -1,8 +1,12 @@
 package com.example.buildingar
 
 import android.Manifest
+import android.app.ComponentCaller
+import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Configuration
+import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.TextView
@@ -12,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -43,6 +48,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
     val cameraPermissionViewModel : CameraPermissionViewModel by viewModels {
@@ -56,6 +62,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var arSurfaceView: ARSurfaceView
 
+
     override fun getAssets(): AssetManager {
         return super.getAssets()
     }
@@ -67,6 +74,11 @@ class MainActivity : ComponentActivity() {
 
         cameraPermissionViewModel.checkCameraPermission()
         ARNative.onCreate(this)
+
+        val converter = AssetConverter(this)
+        val glbPath = converter.convertModel("models/building.fbx")
+
+        ARNative.setModelPath(glbPath)
 
         enableEdgeToEdge()
         setContent {
@@ -88,6 +100,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /* Handle external intents here */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+        val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
     }
 
     override fun onPause() {
@@ -252,6 +271,18 @@ class MainActivity : ComponentActivity() {
         Image(
             painter = painterResource(id = imageRes),
             contentDescription = "Navigation Button",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .size(70.dp)
+                .clickable { onClick.invoke() }
+        )
+    }
+
+    @Composable
+    fun AxisFlipButton(imageRes : Int, onClick: () -> Unit) {
+        Image(
+            painter = painterResource(id = imageRes),
+            contentDescription = "Axis flip button",
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .size(70.dp)

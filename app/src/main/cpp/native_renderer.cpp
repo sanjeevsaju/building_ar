@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "arcore_manager.h"
+#include <arcore_manager.h>
 
 #define LOG_TAG "Native Renderer"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -67,4 +67,31 @@ JNIEXPORT void JNICALL
 Java_com_example_buildingar_ARNative_onTranslateCube(JNIEnv *env, jobject thiz, jfloat x, jfloat y,
                                                      jfloat z) {
     manager->TranslateCube(x, y, z);
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_example_buildingar_ARNative_nativeConvertToGLB(JNIEnv *env, jobject thiz,
+                                                        jstring input_path, jstring output_path) {
+    const char* inputPath = env->GetStringUTFChars(input_path, nullptr);
+    LOGI("SANJU : inputPath = %s", inputPath);
+    const char* outputPath = env->GetStringUTFChars(output_path, nullptr);
+    LOGI("SANJU : outputPath = %s", outputPath);
+
+    bool success = manager->ConvertToGLB(inputPath, outputPath);
+
+    env->ReleaseStringUTFChars(input_path, inputPath);
+    env->ReleaseStringUTFChars(output_path, outputPath);
+
+    return success ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_buildingar_ARNative_setModelPath(JNIEnv *env, jobject thiz, jstring model_path) {
+    if(manager) {
+        const char* path = env->GetStringUTFChars(model_path, nullptr);
+        manager->SetModelPath(path);
+        env->ReleaseStringUTFChars(model_path, path);
+    }
 }

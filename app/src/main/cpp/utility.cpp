@@ -1,4 +1,6 @@
-#include "arcore_manager.h"
+#include <arcore_manager.h>
+#include <assimp/Exporter.hpp>
+#include <fstream>
 
 void ARCoreManager::TransformPoint(const float model_matrix[16], const float local_point[3], float world_point[3]) {
     /* Convert the local point to homogeneous coordinates */
@@ -170,4 +172,51 @@ std::string ARCoreManager::LoadShaderFromAsset(const char *shaderPath) {
     AAsset_close(asset);
     delete[] buffer;
     return shaderCode;
+}
+
+bool ARCoreManager::ConvertToGLB(const char *inputAssetPath, const char *outputFilePath) {
+    /* Read the asset from Android assets */
+    AAsset *asset = AAssetManager_open(asset_manager, inputAssetPath, AASSET_MODE_BUFFER);
+    if(!asset) {
+        LOGE("NAT_ERROR : Failed to open in ARCoreManager::ConvertToGLB : %s", inputAssetPath);
+        return false;
+    }
+
+    size_t length = AAsset_getLength(asset);
+    void *data = malloc(length);
+    AAsset_read(asset, data, length);
+    AAsset_close(asset);
+
+    /* Now import models using Assimp */
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFileFromMemory(
+            data, length,
+            aiProcess_Triangulate |
+            aiProcess_GenNormals |
+            aiProcess_FlipUVs |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_OptimizeMeshes |
+            aiProcess_EmbedTextures |
+            aiProcess_FindInstances, "fbx"
+    );
+    free(data);
+
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        LOGE("NAT_ERROR : Assimp error in ConvertToGLB: %s", importer.GetErrorString());
+        return false;
+    }
+
+    /* Now exporting as GLB */
+    Assimp::Exporter exporter;
+    aiReturn result = exporter.Export(scene, "glb2", outputFilePath, 0);
+
+    if(result != AI_SUCCESS) {
+        LOGE("NAT_ERROR : GLB export failed in ConvertToGLB : %s", exporter.GetErrorString());
+        return false;
+    }
+    return true;
+}
+
+void ARCoreManager::SetModelPath(const std::string &path) {
+    model_path_ = path;
 }
