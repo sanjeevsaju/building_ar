@@ -6,10 +6,17 @@ import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.view.Display
 import android.view.Surface
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class ARSurfaceView(context: Context) : GLSurfaceView(context), GLSurfaceView.Renderer {
+
+    enum class SurfaceState { INITIAL, CREATED, CHANGED, PAUSED, DESTROYED }
+    private val _surfaceState = MutableStateFlow<SurfaceState>(SurfaceState.INITIAL)
+    val surfaceState : StateFlow<SurfaceState> = _surfaceState
 
     private var displayRotation : Int = 0
     private val displayManager  = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
@@ -35,13 +42,17 @@ class ARSurfaceView(context: Context) : GLSurfaceView(context), GLSurfaceView.Re
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         ARNative.onSurfaceCreated()
         println("SANJU : ARSurfaceView onSurfaceCreated : ${Thread.currentThread().name}")
+        _surfaceState.value = SurfaceState.CREATED
     }
 
+    /* Called on the GL thread */
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        println("SANJU : ARSurfaceView onSurfaceChanged")
+        println("SANJU : ARSurfaceView onSurfaceChanged : ${Thread.currentThread().name}")
         updateDisplayRotation()
         GLES20.glViewport(0, 0, width, height)
+        _surfaceState.value = SurfaceState.CHANGED
     }
+
 
     /* Called on the GL thread */
     override fun onDrawFrame(gl: GL10?) {
@@ -53,12 +64,19 @@ class ARSurfaceView(context: Context) : GLSurfaceView(context), GLSurfaceView.Re
     override fun onPause() {
         super.onPause()
         println("SANJU : ARSurfaceView onPause")
+        _surfaceState.value = SurfaceState.PAUSED
     }
 
     /* Called on the main thread */
     override fun onResume() {
         super.onResume()
         println("SANJU : ARSurfaceView onResume")
+    }
+
+    fun runOnGLThread(action : () -> Unit) {
+        /* Queue a runnable to be run on the GL thread */
+        println("SANJU : Before queueEvent(action)")
+        queueEvent(action)
     }
 
     private fun updateDisplayRotation() {

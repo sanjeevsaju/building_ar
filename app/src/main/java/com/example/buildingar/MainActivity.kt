@@ -2,6 +2,7 @@ package com.example.buildingar
 
 import android.Manifest
 import android.app.ComponentCaller
+import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Configuration
@@ -9,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,13 +46,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.io.File
 import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
+
+    val context : Context = this
     val cameraPermissionViewModel : CameraPermissionViewModel by viewModels {
         CameraPermissionViewModelFactory(application)
     }
@@ -61,24 +69,27 @@ class MainActivity : ComponentActivity() {
         }
 
     private lateinit var arSurfaceView: ARSurfaceView
-
+    private lateinit var surfaceStateJob : Job
 
     override fun getAssets(): AssetManager {
         return super.getAssets()
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        println("SANJU : onCreate() called")
 
         MobileAds.initialize(this) {}
+
+        /* When the app is launches for the first time, the GL thread is created along
+        with the opengl context creation */
+        arSurfaceView = ARSurfaceView(this)
+        ARNative.setARSurfaceView(arSurfaceView)
 
         cameraPermissionViewModel.checkCameraPermission()
         ARNative.onCreate(this)
 
-        val converter = AssetConverter(this)
-        val glbPath = converter.convertModel("models/building.fbx")
-
-        ARNative.setModelPath(glbPath)
 
         enableEdgeToEdge()
         setContent {
@@ -100,13 +111,65 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        surfaceStateJob = lifecycleScope.launch {
+            arSurfaceView.surfaceState.collect { state->
+                if(state == ARSurfaceView.SurfaceState.CHANGED) {
+                    processIntent(context, intent)
+                }
+            }
+        }
     }
 
     /* Handle external intents here */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
-        super.onNewIntent(intent, caller)
-        val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        println("SANJU : onNewIntent launched")
+
+        /* When the app is re-opened after minimization, the emitter emit
+        the last known state again when it sees the new collector */
+        surfaceStateJob = lifecycleScope.launch {
+            arSurfaceView.surfaceState.collect { state->
+                if(state == ARSurfaceView.SurfaceState.CHANGED) {
+                    processIntent(context, intent)
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun processIntent(context : Context, intent : Intent) {
+        val uri = intent.data
+        var model_name : String? = null
+        var file : File? = null
+        if(uri?.scheme == "content") {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if(it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if(nameIndex != -1) {
+                        model_name = it.getString(nameIndex)
+                    }
+                }
+            }
+        }
+        // Now create a File(), write the contents to the file and then invoke the ARNative function with the filepath as parameter
+        if(model_name != null) {
+            file = File(context.filesDir, "models/${model_name}")
+            if(!file.exists()) {
+                file.parentFile?.mkdirs()
+                if(uri != null) {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        file.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+            }
+            println("SANJU : ${file.absolutePath}")
+            ARNative.loadModel(file.absolutePath)
+        }
     }
 
     override fun onPause() {
@@ -116,6 +179,16 @@ class MainActivity : ComponentActivity() {
         if(::arSurfaceView.isInitialized) {
             arSurfaceView.onPause()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        println("SANJU : onStop()")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        println("SANJU : onDestroy()")
     }
 
     override fun onResume() {
@@ -160,7 +233,11 @@ class MainActivity : ComponentActivity() {
             // Rendering OpenGL
             AndroidView(
                 factory = {
-                    ARSurfaceView(context).also { arSurfaceView = it }
+//                    ARSurfaceView(context).also {
+//                        arSurfaceView = it
+//                        ARNative.setARSurfaceView(it)
+//                    }
+                    arSurfaceView
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -178,8 +255,6 @@ class MainActivity : ComponentActivity() {
                             .padding(32.dp)
                     ),
             ) {
-
-
                 /* This box contains the translation buttons */
                 Box(
                     modifier = Modifier,
@@ -207,7 +282,6 @@ class MainActivity : ComponentActivity() {
                             imageRes = R.drawable.button_left,
                             onClick = { ARNative.onTranslateCube(-0.01f, 0.0f, 0.0f) }
                         )
-
                         NavigationButton(
                             imageRes = R.drawable.button_right,
                             onClick = { ARNative.onTranslateCube(0.01f, 0.0f, 0.0f) }
@@ -290,3 +364,10 @@ class MainActivity : ComponentActivity() {
         )
     }
 }
+
+/* Note for Adb */
+// To view the local file system of the running app in the adb, use the following commands
+// 1. adb shell
+// 2. run-as com.example.buildingar (for non-rooted devices)
+// 3. cd files/
+// The folder 'converted' will be available from this location

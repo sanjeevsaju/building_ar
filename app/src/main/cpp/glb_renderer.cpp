@@ -1,30 +1,78 @@
 #include <glb_renderer.h>
 
 bool GLBModel::load(AAssetManager *assetManager, const std::string &filename) {
+    LOG_TID("THREAD_TEST : Thread of load");
 
-    /* Load GLB file */
-    AAsset* asset = AAssetManager_open(assetManager, filename.c_str(), AASSET_MODE_BUFFER);
-    if(!asset) {
-        LOGE("NAT_ERROR : Failed to open asset in GLBModel::load : %s", filename.c_str());
+    /* Load GLB file from the apk bundle */
+//    std::string model_path = "models/jap_rest.glb";
+//    AAsset* asset = AAssetManager_open(assetManager, model_path.c_str(), AASSET_MODE_BUFFER);
+//    if(!asset) {
+//        LOGE("NAT_ERROR : Failed to open asset in GLBModel::load : %s", model_path.c_str());
+//        return false;
+//    }
+//
+//    size_t length = AAsset_getLength(asset);
+//    std::vector<uint8_t> buffer_a(length);
+//    AAsset_read(asset, buffer_a.data(), length);
+//    AAsset_close(asset);
+    LOGI("SANJU : Before release()");
+    release();
+    LOGI("SANJU : After release()");
+
+    /* Read the file from local file system into memory */
+    /* Reads the file as binary with no character translation. Also keeps the byte order */
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if(!file.is_open()) {
+        LOGE("NAT ERROR : Failed to open the model file : %s", filename.c_str());
+        return false;
+    }
+    LOGI("SANJU : Model is successfully opened");
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer_f(size);
+    if(!file.read( (buffer_f.data()), size)) {
+        LOGE("NAT ERROR : Failed to read the model file : %s", filename.c_str());
         return false;
     }
 
-    size_t length = AAsset_getLength(asset);
-    std::vector<uint8_t> buffer(length);
-    AAsset_read(asset, buffer.data(), length);
-    AAsset_close(asset);
+    std::streamsize bytesRead = file.gcount();
+    if(bytesRead != size) {
+        LOGE("NAT_ERROR : Failed to read the entire file : expected(%lld) | got(%lld)", (long long)size, (long long)bytesRead);
+        return false;
+    } else {
+        LOGI("MEM_TEST : size = %d", size);
+    }
+
+    LOGI("SANJU : Model is successfully read");
+
+//    /* First checking if  the byte size is the same */
+//    if(size != length) {
+//        LOGE("MEM_TEST : buffer_f and buffer_a size not the same : %zu , %zu", buffer_f.size(), buffer_a.size());
+//    }
+//
+//    /* Testing if buffer_a and buffer_f are the same bitwise */
+//    bool fast_compare = memcmp(
+//            buffer_a.data(),
+//            buffer_f.data(),
+//            size
+//            ) == 0;
+//    if(fast_compare) {
+//        LOGI("MEM_TEST : Both are same bitwise");
+//    }
 
     /* Parse the file using Assimp */
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFileFromMemory(
-            buffer.data(), length,
+            buffer_f.data(), size,
             aiProcess_Triangulate |
             aiProcess_GenNormals |
             aiProcess_FlipUVs |
             aiProcess_JoinIdenticalVertices |
             aiProcess_OptimizeMeshes |
             aiProcess_EmbedTextures |
-            aiProcess_FindInstances, "glb2"
+            aiProcess_FindInstances, "glb"
             );
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {

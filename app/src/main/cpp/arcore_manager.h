@@ -48,6 +48,7 @@ public:
     std::string LoadShaderFromAsset(const char* shaderPath);
     bool ConvertToGLB(const char* inputAssetPath, const char* outputFilePath);
     void SetModelPath(const std::string& path);
+    void loadModelFromStorage(const std::string& path);
 
 private:
 

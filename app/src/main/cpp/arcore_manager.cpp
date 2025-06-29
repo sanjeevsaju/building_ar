@@ -16,9 +16,13 @@
         } \
     }
 
+void ARCoreManager::loadModelFromStorage(const std::string &path) {
+    glb_model.load(asset_manager, path);
+}
+
 /* Runs on the main thread */
 bool ARCoreManager::Initialize(void *env, jobject context, AAssetManager* mgr) {
-    LOG_TID("SANJU : Thread of Initialize");
+    LOG_TID("THREAD_TEST : Thread of Initialize");
     asset_manager = mgr;
     if(!mgr) {
         LOGE("NAT_ERROR : Asset manager is null");
@@ -53,6 +57,7 @@ void ARCoreManager::Pause() {
 
 /* Runs on the GL thread */
 void ARCoreManager::OnSurfaceCreated() {
+    LOG_TID("THREAD_TEST : Thread of OnSurfaceCreated");
 
     std::string planeVertexShaderCode = LoadShaderFromAsset("shaders/plane/plane.vert");
     const char* planeVertexShaderSource = planeVertexShaderCode.c_str();
@@ -185,8 +190,6 @@ void ARCoreManager::OnSurfaceCreated() {
     }
 
 
-    LOG_TID("SANJU : Thread of OnSurfaceCreated");
-
     /* Let the model loads and does the opengl config concurrently using thread as it wont affect the camera texture rendering and plane rendering */
 //    std::thread t1([&](){
 //        LOG_TID("SANJU : Thread in OnSurfaceCreated");
@@ -216,7 +219,7 @@ void ARCoreManager::OnSurfaceCreated() {
 //    }
 
     glb_model.setProgram(model_shader_program);
-    glb_model.load(asset_manager, "models/building.glb");
+//    glb_model.load(asset_manager, "models/test_jepp.glb");
 //    glb_model.load(asset_manager, model_path_);
     /****************** Model Config Ends *****************/
 
@@ -225,6 +228,7 @@ void ARCoreManager::OnSurfaceCreated() {
 
 /* Runs on the GL thread */
 void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
+    LOG_TID("THREAD_TEST : Thread of OnDrawFrame");
     if(!ar_session) return;
 
     screen_width = width;

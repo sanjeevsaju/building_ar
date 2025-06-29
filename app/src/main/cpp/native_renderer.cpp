@@ -34,7 +34,7 @@ Java_com_example_buildingar_ARNative_onPause(JNIEnv *env, jobject thiz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_buildingar_ARNative_onSurfaceCreated(JNIEnv *env, jobject thiz) {
+Java_com_example_buildingar_ARNative_nativeOnSurfaceCreated(JNIEnv *env, jobject thiz) {
     manager->OnSurfaceCreated();
 }
 extern "C"
@@ -92,6 +92,16 @@ Java_com_example_buildingar_ARNative_setModelPath(JNIEnv *env, jobject thiz, jst
     if(manager) {
         const char* path = env->GetStringUTFChars(model_path, nullptr);
         manager->SetModelPath(path);
+        env->ReleaseStringUTFChars(model_path, path);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_buildingar_ARNative_nativeLoadModel(JNIEnv *env, jobject thiz, jstring model_path) {
+    if(manager) {
+        const char* path = env->GetStringUTFChars(model_path, nullptr);
+        manager->loadModelFromStorage(path);
         env->ReleaseStringUTFChars(model_path, path);
     }
 }

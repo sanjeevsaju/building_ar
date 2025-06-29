@@ -15,6 +15,9 @@
 #include <string>
 #include <cstring>
 #include <unordered_map>
+#include <fstream>
+#include <sstream>
+#include <sys/syscall.h>
 
 #include <stb_image.h>
 #include <glm/glm.hpp>
@@ -24,6 +27,7 @@
 #define LOG_TAG "GLBRenderer"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOG_TID(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "[TID:%ld] " __VA_ARGS__, syscall(SYS_gettid))
 
 class GLBModel {
 public:

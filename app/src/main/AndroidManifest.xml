@@ -24,6 +24,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleInstance"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="true">
 
@@ -42,6 +43,12 @@
                 <data android:scheme="file" android:pathPattern=".*\\.glb" />
                 <data android:scheme="content" android:pathPattern=".*\\.glb" />
             </intent-filter>
+
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.SEND"/>-->
+<!--                <category android:name="android.intent.category.DEFAULT"/>-->
+<!--                <data android:mimeType="model/*"/>-->
+<!--            </intent-filter>-->
 
 
             <intent-filter>

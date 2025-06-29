@@ -2,17 +2,56 @@ package com.example.buildingar
 
 import android.app.Activity
 import android.content.Context
+import java.lang.ref.WeakReference
 
 object ARNative {
     init {
         System.loadLibrary("buildingar")
-        println("SANJU : ARNative init - ${Thread.currentThread().name}")
+    }
+
+    private var isSurfaceCreated : Boolean = false
+    var isSurfaceChanged : Boolean = false
+    private var pendingModelPath : String? = null
+    var pendingSurfaceWork : Boolean = false
+    private val lock = Any()
+    val lock_2 = Any()
+    private var arSurfaceViewWeak : WeakReference<ARSurfaceView>? = null
+
+    fun onSurfaceCreated() {
+        synchronized(lock) {
+            isSurfaceCreated = true
+            pendingModelPath?.let { path ->
+                runOnGLThread { nativeLoadModel(path) }
+                pendingModelPath = null
+            }
+        }
+        nativeOnSurfaceCreated()
+    }
+
+    fun loadModel(modelPath : String) {
+        synchronized(lock) {
+            if(isSurfaceCreated) {
+                runOnGLThread { nativeLoadModel(modelPath) }
+            } else {
+                pendingModelPath = modelPath
+            }
+        }
+    }
+
+    fun setARSurfaceView(view : ARSurfaceView) {
+        println("SANJU : setARSurfaceVie called")
+        arSurfaceViewWeak = WeakReference(view)
+    }
+
+    fun runOnGLThread(action : () -> Unit) {
+        println("SANJU : runOnGLThread called")
+        arSurfaceViewWeak?.get()?.runOnGLThread(action)
     }
 
     external fun onCreate(context: Context)
     external fun onResume(activity: Activity)
     external fun onPause()
-    external fun onSurfaceCreated()
+    external fun nativeOnSurfaceCreated()
     external fun onDrawFrame(width : Int, height : Int, displayRotation : Int)
     external fun onTouch(x : Float, y : Float)
 
@@ -22,5 +61,6 @@ object ARNative {
 
     external fun nativeConvertToGLB(inputPath : String, outputPath : String) : Boolean
     external fun setModelPath(modelPath : String)
+    external fun nativeLoadModel(modelPath : String)
 
 }
