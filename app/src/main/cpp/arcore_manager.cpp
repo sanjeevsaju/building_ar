@@ -16,8 +16,10 @@
         } \
     }
 
-void ARCoreManager::loadModelFromStorage(const std::string &path) {
-    glb_model.load(asset_manager, path);
+void ARCoreManager::loadModelFromIntent(const std::string &path) {
+    LOGI("SANJU : ARCoreManager::loadModelFromIntent");
+    glb_model.mState = GLBModelAsync::NOT_LOADED;
+    glb_model.load(path);
 }
 
 /* Runs on the main thread */
@@ -57,6 +59,7 @@ void ARCoreManager::Pause() {
 
 /* Runs on the GL thread */
 void ARCoreManager::OnSurfaceCreated() {
+    LOGI("SANJU : ARCoreManager::OnSurfaceCreated");
     LOG_TID("THREAD_TEST : Thread of OnSurfaceCreated");
 
     std::string planeVertexShaderCode = LoadShaderFromAsset("shaders/plane/plane.vert");
@@ -228,7 +231,7 @@ void ARCoreManager::OnSurfaceCreated() {
 
 /* Runs on the GL thread */
 void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
-    LOG_TID("THREAD_TEST : Thread of OnDrawFrame");
+//    LOG_TID("THREAD_TEST : Thread of OnDrawFrame");
     if(!ar_session) return;
 
     screen_width = width;
@@ -335,14 +338,18 @@ void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
     }
     ArTrackableList_destroy(planes);
 
+    if(glb_model.mState == GLBModelAsync::LOADED) {
+        glb_model.update();
+    }
+
     /* Render the object here */
-    if(model_place) {
+    if(model_place && glb_model.mState == GLBModelAsync::READY) {
         glm::mat4 model_pose_matrix = hit_pose_matrix;
         glm::mat4 model_scale = glm::scale(glm::mat4(1.0f), glm::vec3(scaling_factor));
         glm::mat4 model_rotation = glm::rotate(glm::mat4(1.0f), cube_rotation_angle, cube_rotation_axis);
         glm::mat4 model_flip_axis = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::mat4 model_translation = glm::translate(glm::mat4(1.0f), cube_translation_vector);
-        glm::mat4 model_mvp = proj * view * model_translation * model_pose_matrix * model_rotation * model_scale;
+        glm::mat4 model_mvp = proj * view * model_translation * model_pose_matrix  * model_rotation * model_scale;
 
         glb_model.draw(glm::value_ptr(model_mvp));
     }

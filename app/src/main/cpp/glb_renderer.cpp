@@ -31,6 +31,7 @@ bool GLBModel::load(AAssetManager *assetManager, const std::string &filename) {
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
+    /* Read the model into memory */
     std::vector<char> buffer_f(size);
     if(!file.read( (buffer_f.data()), size)) {
         LOGE("NAT ERROR : Failed to read the model file : %s", filename.c_str());
@@ -62,7 +63,7 @@ bool GLBModel::load(AAssetManager *assetManager, const std::string &filename) {
 //        LOGI("MEM_TEST : Both are same bitwise");
 //    }
 
-    /* Parse the file using Assimp */
+    /* Parse the model file using Assimp */
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFileFromMemory(
             buffer_f.data(), size,
@@ -344,16 +345,3 @@ GLuint GLBModel::createDefaultTexture() {
 
     return textureId;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

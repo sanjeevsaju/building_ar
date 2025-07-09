@@ -7,17 +7,17 @@ import java.lang.ref.WeakReference
 object ARNative {
     init {
         System.loadLibrary("buildingar")
+        println("SANJU : ARNative::Init")
     }
 
     private var isSurfaceCreated : Boolean = false
-    var isSurfaceChanged : Boolean = false
     private var pendingModelPath : String? = null
-    var pendingSurfaceWork : Boolean = false
     private val lock = Any()
     val lock_2 = Any()
     private var arSurfaceViewWeak : WeakReference<ARSurfaceView>? = null
 
     fun onSurfaceCreated() {
+        println("SANJU : ARNative::onSurfaceCreated")
         synchronized(lock) {
             isSurfaceCreated = true
             pendingModelPath?.let { path ->
@@ -29,6 +29,7 @@ object ARNative {
     }
 
     fun loadModel(modelPath : String) {
+        println("SANJU : ARNative::loadModel")
         synchronized(lock) {
             if(isSurfaceCreated) {
                 runOnGLThread { nativeLoadModel(modelPath) }
@@ -39,12 +40,12 @@ object ARNative {
     }
 
     fun setARSurfaceView(view : ARSurfaceView) {
-        println("SANJU : setARSurfaceVie called")
+        println("SANJU : ARNative::setARSurfaceView")
         arSurfaceViewWeak = WeakReference(view)
     }
 
     fun runOnGLThread(action : () -> Unit) {
-        println("SANJU : runOnGLThread called")
+        println("SANJU : ARNative::runOnGLThread")
         arSurfaceViewWeak?.get()?.runOnGLThread(action)
     }
 

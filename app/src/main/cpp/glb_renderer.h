@@ -31,7 +31,6 @@
 
 class GLBModel {
 public:
-
     /* For up axis detection and correction */
     glm::vec3 minBounds;    // Bounding box min
     glm::vec3 maxBounds;    // Bounding box max
@@ -58,6 +57,14 @@ private:
     std::vector<Mesh> mMeshes;
     std::unordered_map<std::string, GLuint> mTextures;
 
+    /* Addition */
+    struct textureImageData {
+        int width, height, channels;
+        unsigned char* imageBytes;
+    };
+    std::unordered_map<std::string, textureImageData> mTextureImages;
+
+    void extractTextureImages(const aiScene *scene);
     void processNode(aiNode* node, const aiScene* scene);
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
     Mesh setupMesh(const std::vector<float>& vertices,

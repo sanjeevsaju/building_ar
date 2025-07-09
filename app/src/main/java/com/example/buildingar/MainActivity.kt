@@ -58,6 +58,11 @@ import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
 
+    enum class IntentRoute {
+        DEFAULT, ONCREATE, ONNEWINTENT
+    }
+    private lateinit var intentRoute: IntentRoute
+
     val context : Context = this
     val cameraPermissionViewModel : CameraPermissionViewModel by viewModels {
         CameraPermissionViewModelFactory(application)
@@ -78,7 +83,9 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        println("SANJU : onCreate() called")
+        println("SANJU : MainActivity::onCreate()")
+
+        intentRoute = IntentRoute.ONCREATE
 
         MobileAds.initialize(this) {}
 
@@ -89,7 +96,6 @@ class MainActivity : ComponentActivity() {
 
         cameraPermissionViewModel.checkCameraPermission()
         ARNative.onCreate(this)
-
 
         enableEdgeToEdge()
         setContent {
@@ -114,7 +120,8 @@ class MainActivity : ComponentActivity() {
 
         surfaceStateJob = lifecycleScope.launch {
             arSurfaceView.surfaceState.collect { state->
-                if(state == ARSurfaceView.SurfaceState.CHANGED) {
+                if(state == ARSurfaceView.SurfaceState.CHANGED && intentRoute == IntentRoute.ONCREATE) {
+                    println("SANJU : MainActivity::onCreate::setContent::lifecycleScope")
                     processIntent(context, intent)
                 }
             }
@@ -125,13 +132,16 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        println("SANJU : onNewIntent launched")
+        println("SANJU : MainActivity::onNewIntent")
+
+        intentRoute = IntentRoute.ONNEWINTENT
 
         /* When the app is re-opened after minimization, the emitter emit
         the last known state again when it sees the new collector */
         surfaceStateJob = lifecycleScope.launch {
             arSurfaceView.surfaceState.collect { state->
-                if(state == ARSurfaceView.SurfaceState.CHANGED) {
+                if(state == ARSurfaceView.SurfaceState.CHANGED && intentRoute == IntentRoute.ONNEWINTENT) {
+                    println("SANJU : MainActivity::onNewIntent::lifecycleScope")
                     processIntent(context, intent)
                 }
             }
@@ -167,14 +177,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            println("SANJU : ${file.absolutePath}")
+            println("SANJU : MainActivity::processIntent : ${file.absolutePath}")
             ARNative.loadModel(file.absolutePath)
         }
     }
 
     override fun onPause() {
         super.onPause()
-        println("SANJU : onPause() ${Thread.currentThread().name}")
+        println("SANJU : MainActivity::onPause() ${Thread.currentThread().name}")
         ARNative.onPause()
         if(::arSurfaceView.isInitialized) {
             arSurfaceView.onPause()
@@ -183,12 +193,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        println("SANJU : onStop()")
+        println("SANJU : MainActivity::onStop()")
+        intentRoute = IntentRoute.DEFAULT
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        println("SANJU : onDestroy()")
+        println("SANJU : MainActivity::onDestroy()")
     }
 
     override fun onResume() {
@@ -201,7 +212,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        println("SANJU : Configuration Changed")
+        println("SANJU : MainActivity::onConfigurationChanged")
     }
 
 //    override fun onTouchEvent(event: MotionEvent?): Boolean {

@@ -37,10 +37,10 @@ JNIEXPORT void JNICALL
 Java_com_example_buildingar_ARNative_nativeOnSurfaceCreated(JNIEnv *env, jobject thiz) {
     manager->OnSurfaceCreated();
 }
+
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_buildingar_ARNative_onDrawFrame(JNIEnv *env, jobject thiz, jint width, jint height,
-                                                 jint display_rotation) {
+Java_com_example_buildingar_ARNative_onDrawFrame(JNIEnv *env, jobject thiz, jint width, jint height, jint display_rotation) {
     manager->OnDrawFrame(width, height, display_rotation);
 }
 
@@ -64,8 +64,7 @@ Java_com_example_buildingar_ARNative_onScaleCube(JNIEnv *env, jobject thiz, jflo
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_buildingar_ARNative_onTranslateCube(JNIEnv *env, jobject thiz, jfloat x, jfloat y,
-                                                     jfloat z) {
+Java_com_example_buildingar_ARNative_onTranslateCube(JNIEnv *env, jobject thiz, jfloat x, jfloat y, jfloat z) {
     manager->TranslateCube(x, y, z);
 }
 
@@ -101,7 +100,7 @@ JNIEXPORT void JNICALL
 Java_com_example_buildingar_ARNative_nativeLoadModel(JNIEnv *env, jobject thiz, jstring model_path) {
     if(manager) {
         const char* path = env->GetStringUTFChars(model_path, nullptr);
-        manager->loadModelFromStorage(path);
+        manager->loadModelFromIntent(path);
         env->ReleaseStringUTFChars(model_path, path);
     }
 }

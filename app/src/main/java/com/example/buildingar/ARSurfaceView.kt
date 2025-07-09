@@ -6,6 +6,7 @@ import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.view.Display
 import android.view.Surface
+import android.view.SurfaceHolder
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,24 +36,29 @@ class ARSurfaceView(context: Context) : GLSurfaceView(context), GLSurfaceView.Re
 //        setZOrderOnTop(true)
 
         renderMode = RENDERMODE_CONTINUOUSLY
-        println("SANJU : ARSurfaceView init")
+        println("SANJU : ARSurfaceView::Init")
     }
 
     /* Called on the GL thread */
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         ARNative.onSurfaceCreated()
-        println("SANJU : ARSurfaceView onSurfaceCreated : ${Thread.currentThread().name}")
+        println("SANJU : ARSurfaceView::onSurfaceCreated : ${Thread.currentThread().name}")
         _surfaceState.value = SurfaceState.CREATED
     }
 
     /* Called on the GL thread */
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        println("SANJU : ARSurfaceView onSurfaceChanged : ${Thread.currentThread().name}")
+        println("SANJU : ARSurfaceView::onSurfaceChanged : ${Thread.currentThread().name}")
         updateDisplayRotation()
         GLES20.glViewport(0, 0, width, height)
         _surfaceState.value = SurfaceState.CHANGED
     }
 
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        super.surfaceDestroyed(holder)
+        _surfaceState.value = SurfaceState.DESTROYED
+        println("SANJU : ARSurfaceView::surfaceDestroyed()")
+    }
 
     /* Called on the GL thread */
     override fun onDrawFrame(gl: GL10?) {
@@ -63,19 +69,19 @@ class ARSurfaceView(context: Context) : GLSurfaceView(context), GLSurfaceView.Re
     /* Called on the main thread */
     override fun onPause() {
         super.onPause()
-        println("SANJU : ARSurfaceView onPause")
+        println("SANJU : ARSurfaceView::onPause")
         _surfaceState.value = SurfaceState.PAUSED
     }
 
     /* Called on the main thread */
     override fun onResume() {
         super.onResume()
-        println("SANJU : ARSurfaceView onResume")
+        println("SANJU : ARSurfaceView::onResume")
     }
 
     fun runOnGLThread(action : () -> Unit) {
         /* Queue a runnable to be run on the GL thread */
-        println("SANJU : Before queueEvent(action)")
+        println("SANJU : ARSurfaceView::runOnGLThread(queueEvent)")
         queueEvent(action)
     }
 

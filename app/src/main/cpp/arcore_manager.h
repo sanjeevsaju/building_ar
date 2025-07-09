@@ -26,7 +26,8 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 #include "model.h"
-#include <glb_renderer.h>
+//#include <glb_renderer.h>
+#include <glb_renderer_async.h>
 
 class ARCoreManager {
 public:
@@ -48,15 +49,18 @@ public:
     std::string LoadShaderFromAsset(const char* shaderPath);
     bool ConvertToGLB(const char* inputAssetPath, const char* outputFilePath);
     void SetModelPath(const std::string& path);
-    void loadModelFromStorage(const std::string& path);
+    void loadModelFromIntent(const std::string& path);
 
 private:
+
+    /* Async GLBModel */
+    GLBModelAsync glb_model;
 
     /* Model object */
     Model obj_model;
     std::string model_path_;
 
-    GLBModel glb_model;
+//    GLBModel glb_model;
 
     float test_x_s = 0.0f;
     float test_y_s = 0.0f;
