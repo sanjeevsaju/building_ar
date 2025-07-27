@@ -31,6 +31,11 @@
 
 class GLBModelAsync {
 public:
+
+    glm::vec3 minBounds;    // Bounding box min
+    glm::vec3 maxBounds;    // Bounding box max
+    float minY = 0.0f;
+
     enum State {
         NOT_LOADED, LOADED, READY, ERROR
     };

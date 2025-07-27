@@ -36,8 +36,8 @@ void ARCoreManager::RotateCube(float degrees) {
     cube_rotation_angle += glm::radians(degrees);
 }
 
-void ARCoreManager::ScaleCube(float scale) {
-    scaling_factor += scale;
+void ARCoreManager::ScaleModel(float scale) {
+    scaling_factor = scale;
 }
 
 void ARCoreManager::DrawVector(glm::vec3 start, glm::vec3 end) {
@@ -219,4 +219,12 @@ bool ARCoreManager::ConvertToGLB(const char *inputAssetPath, const char *outputF
 
 void ARCoreManager::SetModelPath(const std::string &path) {
     model_path_ = path;
+}
+
+void ARCoreManager::PlaneTextureOnOff() {
+    if(planeTextureOnOff) {
+        planeTextureOnOff = false;
+    } else {
+        planeTextureOnOff = true;
+    }
 }

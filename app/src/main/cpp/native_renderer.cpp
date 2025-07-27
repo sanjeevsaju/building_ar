@@ -58,8 +58,8 @@ Java_com_example_buildingar_ARNative_onRotateCube(JNIEnv *env, jobject thiz, jfl
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_example_buildingar_ARNative_onScaleCube(JNIEnv *env, jobject thiz, jfloat scale) {
-    manager->ScaleCube(scale);
+Java_com_example_buildingar_ARNative_onScaleModel(JNIEnv *env, jobject thiz, jfloat scale) {
+    manager->ScaleModel(scale);
 }
 
 extern "C"
@@ -103,4 +103,9 @@ Java_com_example_buildingar_ARNative_nativeLoadModel(JNIEnv *env, jobject thiz, 
         manager->loadModelFromIntent(path);
         env->ReleaseStringUTFChars(model_path, path);
     }
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_buildingar_ARNative_onPlaneTextureOnOff(JNIEnv *env, jobject thiz) {
+    manager->PlaneTextureOnOff();
 }

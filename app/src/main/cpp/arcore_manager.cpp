@@ -44,6 +44,17 @@ bool ARCoreManager::Initialize(void *env, jobject context, AAssetManager* mgr) {
     }
 
     ArFrame_create(ar_session, &ar_frame);
+
+    /* Occlusion Configuration */
+    ArConfig* ar_config = nullptr;
+    ArConfig_create(ar_session, &ar_config);
+
+    if(IsDepthSupported()) {
+        ArConfig_setDepthMode(ar_session, ar_config, AR_DEPTH_MODE_AUTOMATIC);
+    } else {
+        
+    }
+
     return true;
 }
 
@@ -311,28 +322,31 @@ void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
                 world_vertices.push_back(world_point[2]);
             }
 
-            /* Draw the polygon (plane) */
-            glUseProgram(plane_shader_program);
-            /* Enable depth test */
-            glEnable(GL_DEPTH_TEST);
-            /* Accept fragment if it closer to the camera than the former one */
-            glDepthFunc(GL_LESS);
+            if(planeTextureOnOff) {
+                /* Draw the polygon (plane) */
+                glUseProgram(plane_shader_program);
+                /* Enable depth test */
+                glEnable(GL_DEPTH_TEST);
+                /* Accept fragment if it closer to the camera than the former one */
+                glDepthFunc(GL_LESS);
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            GLuint mvpLocation = glGetUniformLocation(plane_shader_program, "mvp");
-            glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
+                GLuint mvpLocation = glGetUniformLocation(plane_shader_program, "mvp");
+                glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
 
-            glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
-            glBufferData(GL_ARRAY_BUFFER, world_vertices.size() * sizeof(float) , world_vertices.data(), GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
+                glBufferData(GL_ARRAY_BUFFER, world_vertices.size() * sizeof(float),
+                             world_vertices.data(), GL_STATIC_DRAW);
 
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) 0);
 
-            glDrawArrays(GL_TRIANGLE_FAN, 0, world_vertices.size() / 3);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glUseProgram(0);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, world_vertices.size() / 3);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glUseProgram(0);
+            }
         }
         ArTrackable_release(trackable);
     }
@@ -349,7 +363,9 @@ void ARCoreManager::OnDrawFrame(int width, int height, int displayRotation) {
         glm::mat4 model_rotation = glm::rotate(glm::mat4(1.0f), cube_rotation_angle, cube_rotation_axis);
         glm::mat4 model_flip_axis = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::mat4 model_translation = glm::translate(glm::mat4(1.0f), cube_translation_vector);
-        glm::mat4 model_mvp = proj * view * model_translation * model_pose_matrix  * model_rotation * model_scale;
+        glm::mat4 model_grounding = glm::translate(glm::mat4(1.0f), glm::vec3(0, -glb_model.minY, 0));
+
+        glm::mat4 model_mvp = proj * view * model_translation * model_pose_matrix  * model_rotation * model_scale * model_grounding;
 
         glb_model.draw(glm::value_ptr(model_mvp));
     }

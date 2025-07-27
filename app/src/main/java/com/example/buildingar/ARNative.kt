@@ -57,7 +57,8 @@ object ARNative {
     external fun onTouch(x : Float, y : Float)
 
     external fun onRotateCube(degrees : Float)
-    external fun onScaleCube(scale : Float)
+    external fun onScaleModel(scale : Float)
+    external fun onPlaneTextureOnOff()
     external fun onTranslateCube(x : Float, y : Float, z : Float)
 
     external fun nativeConvertToGLB(inputPath : String, outputPath : String) : Boolean

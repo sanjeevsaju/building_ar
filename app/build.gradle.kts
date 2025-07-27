@@ -75,4 +75,6 @@ dependencies {
     implementation ("com.google.accompanist:accompanist-permissions:0.36.0")
 
     implementation ("com.google.android.gms:play-services-ads:23.0.0")
+
+    implementation("com.squareup.duktape:duktape-android:1.4.0")
 }

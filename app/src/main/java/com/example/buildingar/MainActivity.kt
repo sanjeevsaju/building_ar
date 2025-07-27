@@ -1,17 +1,14 @@
 package com.example.buildingar
 
 import android.Manifest
-import android.app.ComponentCaller
 import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.widget.TextView
+import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,16 +28,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -54,10 +62,8 @@ import com.google.android.gms.ads.MobileAds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.File
-import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
-
     enum class IntentRoute {
         DEFAULT, ONCREATE, ONNEWINTENT
     }
@@ -164,6 +170,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
         // Now create a File(), write the contents to the file and then invoke the ARNative function with the filepath as parameter
         if(model_name != null) {
             file = File(context.filesDir, "models/${model_name}")
@@ -230,6 +237,7 @@ class MainActivity : ComponentActivity() {
         val configuration = LocalConfiguration.current
         val isLandscape = (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
         val context = LocalContext.current
+        var sliderValue by remember { mutableFloatStateOf(0.1f) }
 
         Box(
             modifier = Modifier
@@ -332,6 +340,25 @@ class MainActivity : ComponentActivity() {
             ) {
                 BannerAd()
             }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("")
+                VerticalSlider(
+                    value = sliderValue,
+                    onValueChange = { newValue ->
+                        sliderValue = newValue
+                        ARNative.onScaleModel(newValue)
+                    }
+                )
+
+                PlaneTextureOnOff { ARNative.onPlaneTextureOnOff() }
+            }
         }
     }
 
@@ -364,15 +391,41 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AxisFlipButton(imageRes : Int, onClick: () -> Unit) {
-        Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = "Axis flip button",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .size(70.dp)
-                .clickable { onClick.invoke() }
-        )
+    fun VerticalSlider(
+        modifier: Modifier = Modifier,
+        value : Float,
+        onValueChange : (Float) -> Unit
+    ) {
+        Box(
+            modifier = modifier
+                .size(height = 100.dp, width = 100.dp)
+                .rotate(270f),
+            contentAlignment = Alignment.Center
+        ) {
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = 0f..1f,
+                modifier = Modifier.width(100.dp)
+            )
+        }
+    }
+
+    @Composable
+    fun PlaneTextureOnOff(
+        modifier: Modifier = Modifier,
+        onValueChange : () -> Unit
+    ) {
+        Box(
+            modifier = modifier
+                .size(height = 100.dp, width = 100.dp)
+                .rotate(270f),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(
+                onClick = onValueChange
+            ) {}
+        }
     }
 }
 

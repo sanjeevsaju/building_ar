@@ -33,14 +33,40 @@ bool GLBModelAsync::load(const std::string &fileName) {
                     aiProcess_JoinIdenticalVertices |
                     aiProcess_OptimizeMeshes |
                     aiProcess_EmbedTextures |
-                    aiProcess_FindInstances, "glb"
+                    aiProcess_FindInstances |
+                    aiProcess_PreTransformVertices, "glb2"
             );
             if(!mScene || mScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !mScene->mRootNode) {
                 LOGE("NAT_ERROR : Assimp Error | %s", mImporter->GetErrorString());
                 return;
             }
 
+            if (mScene->mMetaData) {
+                LOGI("SANJU: Metadata keys in model:");
+                for (unsigned int i = 0; i < mScene->mMetaData->mNumProperties; i++) {
+                    aiString key = mScene->mMetaData->mKeys[i];
+                    LOGI("SANJU_KEY :   Key %d: %s", i, key.C_Str());
+                }
+            }
+
             LOGI("SANJU : scene->mNumTextures = %d", mScene->mNumTextures);
+
+            /* Computing bounding box */
+            minBounds = glm::vec3(FLT_MAX);
+            maxBounds = glm::vec3(-FLT_MAX);
+            for(unsigned int i = 0; i < mScene->mNumMeshes; i++) {
+                aiMesh* mesh = mScene->mMeshes[i];
+                for(unsigned int v = 0; v < mesh->mNumVertices; v++) {
+                    aiVector3D pos = mesh->mVertices[v];
+                    minBounds.x = std::min(minBounds.x, pos.x);
+                    minBounds.y = std::min(minBounds.y, pos.y);
+                    minBounds.z = std::min(minBounds.z, pos.z);
+                    maxBounds.x = std::max(maxBounds.x, pos.x);
+                    maxBounds.y = std::max(maxBounds.y, pos.y);
+                    maxBounds.z = std::max(maxBounds.z, pos.z);
+                }
+            }
+            minY = minBounds.y;
 
             /* These two methods are not depended on Gl thread and thus can be made to run in std::async() */
             // This call fills  std::vector<Mesh> mMeshes(without textureId and vao/vbo/ebo)
@@ -84,7 +110,7 @@ void GLBModelAsync::extractVertAndIndNode(aiNode *node, const aiScene *scene) {
 }
 
 GLBModelAsync::Mesh GLBModelAsync::extractVertAndIndMesh(aiMesh *mesh, const aiScene *scene) {
-    LOGI("SANJU :  GLBModelAsync::extractVertAndIndMesh : [mesh->mNumVertices = %d]", mesh->mNumVertices);
+    LOGI("SANJU : GLBModelAsync::extractVertAndIndMesh : [mesh->mNumVertices = %d]", mesh->mNumVertices);
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 

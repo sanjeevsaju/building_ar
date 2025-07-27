@@ -40,7 +40,8 @@ public:
     void OnDrawFrame(int width, int height, int displayRotation);
     void OnTouch(float x, float y);
     void RotateCube(float degrees);
-    void ScaleCube(float scale);
+    void ScaleModel(float scale);
+    void PlaneTextureOnOff();
     void TranslateCube(float x, float y, float z);
     void DrawVector(glm::vec3 start, glm::vec3 end);
     bool IsDepthSupported();
@@ -71,12 +72,15 @@ private:
     float test_z_e = 0.0f;
 
     ArSession* ar_session = nullptr;
+//    std::unique_ptr<ARSessionWrapper> ar_session_wrapper = std::make_unique<ARSessionWrapper>();
     ArFrame* ar_frame = nullptr;
+
 
     int32_t screen_width = 0;
     int32_t screen_height = 0;
 
-    GLfloat scaling_factor = 0.05;
+    GLfloat scaling_factor = 0.1f;
+    bool planeTextureOnOff = true;
 
     GLuint plane_shader_program;
     GLuint camera_shader_program;
